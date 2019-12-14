@@ -1,95 +1,110 @@
 package main;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
-import data.*;
+import data.ClypeData;
+import data.MessageClypeData;
 
-public class ServerSideClientIO implements Runnable{
-
-	boolean closeConnection = false;
-	ClypeData dataToRecieveFromClient;
-	ClypeData dataToSendToClient;
-	ObjectInputStream inFromClient;
-	ObjectOutputStream outToClient;
-	ClypeServer serv;
-	Socket clientSocket;
+public class ServerSideClientIO implements Runnable {
 	
-	public  ServerSideClientIO(ClypeServer server, Socket clientSocket) {
-		serv = server;
+	private boolean closeConnection;
+	private ClypeData dataToReceiveFromClient, dataToSendToClient;
+	private ObjectInputStream inFromClient;
+	private ObjectOutputStream outToClient;
+	private ClypeServer server;
+	private Socket clientSocket;
+	
+	public ServerSideClientIO(ClypeServer server, Socket clientSocket) {
+		this.server = server;
 		this.clientSocket = clientSocket;
-		dataToRecieveFromClient = null;
-		dataToSendToClient = null;
-		inFromClient = null;
-		outToClient = null;
+		closeConnection = false;
+		this.inFromClient = null;
+		this.outToClient = null;
+		this.dataToReceiveFromClient = null;
+		this.dataToSendToClient = null;
 	}
 	
+	/**
+	 * Receives data
+	 */
 	public void receiveData() {
 		try {
-			dataToRecieveFromClient = (ClypeData) inFromClient.readObject();
-			if(dataToRecieveFromClient.GetType() == 1) {
-				closeConnection = true;
-			}else if (dataToRecieveFromClient.GetType() == 0) {
-				dataToSendToClient = new MessageClypeData("Server", serv.getListUser(), 0);
-			}else {
-				dataToSendToClient = dataToRecieveFromClient;
+			dataToReceiveFromClient = (ClypeData) inFromClient.readObject();
+			
+			if(dataToReceiveFromClient.getType() == ClypeData.ALLUSERS) {
+				dataToReceiveFromClient = new MessageClypeData(dataToReceiveFromClient.getUserName(), this.server.getAllUsers(), ClypeData.ALLUSERS);
 			}
 			
-			System.out.println("in server receive: " + dataToRecieveFromClient.getData());
-		} catch (ClassNotFoundException cnfe) {
-			System.err.println("Class not found exception: " + cnfe.getMessage());
-			closeConnection = true;
-		} catch (IOException ioe) {
-			System.err.println("IO exception: " + ioe.getMessage());
+			if(dataToReceiveFromClient.getType() == ClypeData.LOGOUT) {
+				this.closeConnection = true;
+				this.server.remove(this);
+			}
+		} catch (ClassNotFoundException | IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println(e.getMessage());
 			closeConnection = true;
 		}
 	}
 	
+	/**
+	 * Sends data
+	 */
 	public void sendData() {
 		try {
 			outToClient.writeObject(dataToSendToClient);
-		}catch (IOException ioe) {
-			System.err.println("IO exception: " + ioe.getMessage());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println("ERROR: " + e.getMessage());
 			closeConnection = true;
 		}
 	}
 	
-	public void setDataToSendToClient (ClypeData dataToSendToClient) {
+	/**
+	 * @param dataToSendToClient data to send to client
+	 */
+	public void setDataToSendToClient(ClypeData dataToSendToClient) {
 		this.dataToSendToClient = dataToSendToClient;
+	}
+	
+	public String getUsername() {
+		return this.dataToReceiveFromClient.getUserName();
 	}
 	
 	@Override
 	public void run() {
+		// TODO Auto-generated method stub
+		
 		try {
+			
 			outToClient = new ObjectOutputStream(clientSocket.getOutputStream());
 			inFromClient = new ObjectInputStream(clientSocket.getInputStream());
-
-
-
-
+			
 			while(!closeConnection) {
 				receiveData();
-				if(!closeConnection) {
-					this.serv.broadcast(dataToSendToClient);
-				}
+				dataToSendToClient = dataToReceiveFromClient;
+				this.server.broadcast(dataToSendToClient);
 			}
-		} catch ( UnknownHostException uhe ) {
-			System.err.println( "Host (server) is not known: " + uhe.getMessage() );
-			closeConnection = true;
-		} catch ( NoRouteToHostException nrthe ) {
-			System.err.println( "A route cannot be established to the server: " + nrthe.getMessage() );
-			closeConnection = true;
-		} catch ( ConnectException ce ) {
-			System.err.println( "Issues with connecting: " + ce.getMessage() );
-			closeConnection = true;
-		} catch ( IOException ioe ) {
-			System.err.println( "Issues with IO: " + ioe.getMessage() );
-			closeConnection = true;
+			
+			inFromClient.close();
+			outToClient.close();
+			clientSocket.close();
+		} catch (UnknownHostException e) {
+			System.err.println("Unknown Host: " + e.getMessage());
+		} catch (NoRouteToHostException e) {
+			System.err.println("Server unreachable " + e.getMessage());
+		} catch (ConnectException e) {
+			System.err.println("Connection refused: " + e.getMessage());
+		} catch (IOException e) {
+			System.err.println(e.getMessage());
 		}
-
+		
 		
 	}
-	
-	
 
 }
