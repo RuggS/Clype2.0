@@ -59,12 +59,12 @@ public class MessageClypeData extends ClypeData{
 			return false;
 		}
 		MessageClypeData m = (MessageClypeData) o;
-		return this.message == m.message && this.GetType() == m.GetType() && this.getUserName() == m.getUserName();
+		return this.message == m.message && this.getType() == m.getType() && this.getUserName() == m.getUserName();
 	}
 	
 	@Override
 	public String toString() {
-		return "This is a message to user '" + super.getUserName() + "' with type " + super.GetType() + 
+		return "This is a message to user '" + super.getUserName() + "' with type " + super.getType() + 
 				", date of " + super.getDate() + ", and message of '" + this.message + "'.";
 	}
 	

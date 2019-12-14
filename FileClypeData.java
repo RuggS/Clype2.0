@@ -174,13 +174,13 @@ public class FileClypeData extends ClypeData{
 			return false;
 		}
 		FileClypeData f = (FileClypeData) o;
-		return this.fileName == f.fileName && this.GetType() == f.GetType() && 
+		return this.fileName == f.fileName && this.getType() == f.getType() && 
 				this.getUserName() == f.getUserName() && this.fileContents == f.fileContents;
 	}
 	
 	@Override
 	public String toString() {
-		return "This is a file to user '" + super.getUserName() + "' with type " + super.GetType() + 
+		return "This is a file to user '" + super.getUserName() + "' with type " + super.getType() + 
 				", date of " + super.getDate() + ", and file name of '" + 
 				this.fileName + " contaning " + this.fileContents + "'.";
 	}

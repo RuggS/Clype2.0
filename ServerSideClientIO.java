@@ -37,11 +37,11 @@ public class ServerSideClientIO implements Runnable {
 		try {
 			dataToReceiveFromClient = (ClypeData) inFromClient.readObject();
 			
-			if(dataToReceiveFromClient.getType() == ClypeData.ALLUSERS) {
-				dataToReceiveFromClient = new MessageClypeData(dataToReceiveFromClient.getUserName(), this.server.getAllUsers(), ClypeData.ALLUSERS);
+			if(dataToReceiveFromClient.getType() == ClypeData.GET_USERS) {
+				dataToReceiveFromClient = new MessageClypeData(dataToReceiveFromClient.getUserName(), this.server.getAllUsers(), ClypeData.GET_USERS);
 			}
 			
-			if(dataToReceiveFromClient.getType() == ClypeData.LOGOUT) {
+			if(dataToReceiveFromClient.getType() == ClypeData.LOG_OUT) {
 				this.closeConnection = true;
 				this.server.remove(this);
 			}

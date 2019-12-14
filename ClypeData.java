@@ -11,10 +11,10 @@ public abstract class ClypeData implements Serializable {
 	private String  userName;
 	private int type;
 	private Date date;
-	private static final int GET_USERS = 0;
-	private static final int LOG_OUT = 1;
-	private static final int SEND_FILE = 2;
-	private static final int SEND_MESSAGE = 3;
+	public static final int GET_USERS = 0;
+	public static final int LOG_OUT = 1;
+	public static final int SEND_FILE = 2;
+	public static final int SEND_MESSAGE = 3;
 	/**
 	 * Constructor that initializes userName and type to an input. Initializes date to the time of instantiation
 	 * @param userName 
@@ -62,13 +62,13 @@ public abstract class ClypeData implements Serializable {
 	/** 
 	 * @return the message or file content if called from MessageClypeData or FileClypeData
 	 */
-	public abstract String getData();
+	public abstract Object getData();
 	/**
 	 * 
 	 * @param key key to decrypt message
 	 * @return the decrypted message
 	 */
-	public abstract String getData(String key);
+	public abstract Object getData(String key);
 	/**
 	 * Method to encrypt a string using the Vigenere cipher
 	 * @param inputStringToEncrypt message to be encrypted
