@@ -79,8 +79,8 @@ public class ClypeClient {
 			t.start();
 			
 			while(!closeConnection) {
-				//inFromStd = new Scanner(System.in);
-				//readClientData();
+				inFromStd = new Scanner(System.in);
+				readClientData();
 				if(!closeConnection) {
 					sendData();
 				}
@@ -113,13 +113,13 @@ public class ClypeClient {
 	/**
 	 * 
 	 */
-	public void readClientData(String in) {
-		String input = in;
+	public void readClientData() {
+		String input = inFromStd.nextLine();
 		if (input.equals("DONE")) {
 			closeConnection = true;
-		}else if (in.substring(0, 7).equals("SENDFILE")) {
+		}else if (input.equals("SENDFILE")) {
 			closeConnection = false;
-			input = in.substring(7);
+			input = inFromStd.next();
 			dataToSendToServer = new FileClypeData(userName, input, 2);
 			try {
 				((FileClypeData) dataToSendToServer).readFileContents();
