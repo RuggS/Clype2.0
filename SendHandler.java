@@ -3,25 +3,26 @@ package application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.TextField;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import data.*;
 import main.*;
 
 public class SendHandler implements EventHandler<ActionEvent>{
 
-	private TextField textField;
-	private String message;
-	private ClypeClient client;
 	
-	public SendHandler(TextField t, ClypeClient cli) {
-		textField = t;
+	ClypeClient client;
+
+	public SendHandler(ClypeClient cli) {
 		client = cli;
 	}
-	
+
 	@Override
 	public void handle(ActionEvent e) {
-		message = textField.getText();
-		client.readClientData(message);
-		
+		client.setSend(true);
+
 	}
 
 }

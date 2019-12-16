@@ -4,14 +4,23 @@ import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
+import application.SendHandler;
 import data.*;
+import javafx.application.Application;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
+import javafx.stage.Stage;
 
 /**
  * 
  * @author Spencer
  *
  */
-public class ClypeClient {
+public class ClypeClient extends Application {
 	
 	public static final int DEFAULT_PORT = 7000;
 	String userName;
@@ -24,6 +33,8 @@ public class ClypeClient {
 	Scanner inFromStd;
 	ObjectInputStream inFromServer;
 	ObjectOutputStream outToServer;
+	private TextField usrMsg = new TextField();
+	private static Boolean send = false;
 	
 	/**
 	 * Creates client using given parameters
@@ -65,6 +76,10 @@ public class ClypeClient {
 		this(usern, "localhost", DEFAULT_PORT);
 	}
 	
+	public ClypeClient() {
+		this("temp", "localhost", DEFAULT_PORT);
+	}
+	
 	/**
 	 * Will start session 
 	 */
@@ -79,9 +94,11 @@ public class ClypeClient {
 			t.start();
 			
 			while(!closeConnection) {
-				inFromStd = new Scanner(System.in);
+//				System.out.println(usrMsg.getText());
 				readClientData();
-				if(!closeConnection) {
+				if(!closeConnection && send) {
+					System.out.println(usrMsg.getText());
+					send = false;
 					sendData();
 				}
 //				if(!closeConnection) {
@@ -114,7 +131,7 @@ public class ClypeClient {
 	 * 
 	 */
 	public void readClientData() {
-		String input = inFromStd.nextLine();
+		String input = usrMsg.getText();
 		if (input.equals("DONE")) {
 			closeConnection = true;
 		}else if (input.equals("SENDFILE")) {
@@ -150,6 +167,10 @@ public class ClypeClient {
 		}
 	}
 	
+	public void setSend(boolean s) {
+		send = s;
+	}
+	
 	/**
 	 * Will be used to receive data from server
 	 */
@@ -171,6 +192,7 @@ public class ClypeClient {
 	public void printData() {
 		if(dataToRecieveFromServer != null) {
 			System.out.println(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData());
+			System.out.println(usrMsg.getText());
 		}
 	}
 	
@@ -225,40 +247,60 @@ public class ClypeClient {
 		return "This is a Clype Client with user name " + userName + ", host name, " + hostName + ", and port" + port;
 	}
 	
-	public static void main(String[] args) {
-		String name = "";
-		String hname = "";
-		String p;
-		int port = 0;
-		ClypeClient cli;
-		if (args.length == 0) {
-			cli = new ClypeClient("Anonymous");
-		}else {
-			name = args[0].substring(0, args[0].length());
-			for (int i = 0; i < args[0].length(); i++) {
-				if(args[0].charAt(i) == '@') {
-					name = args[0].substring(0, i);
-					hname = args[0].substring(name.length() + 1, args[0].length());
-				}else if(args[0].charAt(i) == ':') {
-					hname = args[0].substring(name.length() + 1, i);
-					p = args[0].substring(name.length() + hname.length() + 2, args[0].length());
-					port = Integer.parseInt(p);
-				}
-			}
+	@Override
+	public void start(Stage primaryStage) {
+		try {
+			ClypeClient client = new ClypeClient("GuiTest");
 			
-		}
+			
+			Service<String> service = new Service<String>() {
 
-		if(hname == "") {
-			cli = new ClypeClient(name);
-		}else if(port == 0) {
-			cli = new ClypeClient(name, hname);
-		}else {
-			cli = new ClypeClient(name, hname, port);
+				@Override
+				protected Task<String> createTask() {
+					Task<String> task = new Task<String>() {
+						@Override
+						protected String call() {
+							
+							client.start();
+							return "done";
+						}
+					};
+					return task;
+					
+				}
+	        		
+	        };
+	        
+			service.start();
+			FlowPane root = new FlowPane();
+			
+			
+			
+			Button sendButton = new Button("Send Message");
+			sendButton.setOnAction(new SendHandler(client));
+			Button loadButton = new Button("Send Media");
+			
+			
+			
+			
+			root.getChildren().add(usrMsg);
+			root.getChildren().add(sendButton);
+			root.getChildren().add(loadButton);
+			
+
+			
+			Scene scene = new Scene(root,400,400);
+			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			primaryStage.setScene(scene);
+			primaryStage.show();
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
-//		System.out.println(cli.toString());
-		cli.start();
-		
-		
 	}
 	
+	
+	public static void main(String[] args) {
+		launch(args);
+	}
 }
+	
