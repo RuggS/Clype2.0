@@ -7,14 +7,17 @@ import java.util.Scanner;
 import application.SendHandler;
 import data.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 /**
@@ -36,8 +39,10 @@ public class ClypeClient extends Application {
 	ObjectInputStream inFromServer;
 	ObjectOutputStream outToServer;
 	private TextField usrMsg = new TextField();
+	private VBox messageHist = new VBox();
 	private static boolean send = false;
 	private String msg = "";
+	private static String toGui = null;
 	
 	/**
 	 * Creates client using given parameters
@@ -138,7 +143,7 @@ public class ClypeClient extends Application {
 			closeConnection = true;
 		}else if (input.equals("SENDFILE")) {
 			closeConnection = false;
-			input = inFromStd.next();
+			
 			dataToSendToServer = new FileClypeData(userName, input, 2);
 			try {
 				((FileClypeData) dataToSendToServer).readFileContents();
@@ -184,6 +189,9 @@ public class ClypeClient extends Application {
 	public void receiveData() {
 		try {
 			dataToRecieveFromServer = (ClypeData) inFromServer.readObject();
+			if(dataToRecieveFromServer != null) {
+				toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
+			}
 		} catch (ClassNotFoundException cnfe) {
 			System.err.println("Class not found exception: " + cnfe.getMessage());
 			closeConnection = true;
@@ -199,6 +207,19 @@ public class ClypeClient extends Application {
 	public void printData() {
 		if(dataToRecieveFromServer != null) {
 			System.out.println(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData());
+			
+			
+//			usrMsg.setText("");
+//			Platform.runLater(() -> {
+////				messageHist.getChildren().add(new Label(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData()));
+//				usrMsg.setText("");
+//		    });
+		}
+	}
+	
+	public void printGui() {
+		if(dataToRecieveFromServer != null) {
+			messageHist.getChildren().add(new Label(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData()));
 		}
 	}
 	
@@ -277,7 +298,6 @@ public class ClypeClient extends Application {
 //	        		
 //	        };
 	        
-			
 	        Thread t = new Thread( new Runnable() {
         		@Override
         		public void run() {
@@ -285,7 +305,33 @@ public class ClypeClient extends Application {
         		}
         });	 
 	        
+	        Thread thread = new Thread(new Runnable() {
 
+	            @Override
+	            public void run() {
+	                Runnable updater = new Runnable() {
+
+	                    @Override
+	                    public void run() {
+	                    	if(toGui != null) {
+	                    		messageHist.getChildren().add(new Label(toGui));
+	                    		toGui = null;
+	                    	}
+	                    }
+	                };
+
+	                while (true) {
+	                    try {
+	                        Thread.sleep(1000);
+	                    } catch (InterruptedException ex) {
+	                    }
+
+	                    // UI update is run on the Application thread
+	                    Platform.runLater(updater);
+	                }
+	            }
+
+	        });
 	        
 //			service.start();
 			FlowPane root = new FlowPane();
@@ -303,19 +349,24 @@ public class ClypeClient extends Application {
 			
 			
 			
+
 			
 			root.getChildren().add(usrMsg);
 			root.getChildren().add(sendButton);
 			root.getChildren().add(loadButton);
+			root.getChildren().add(messageHist);
+//			messageHist.getChildren().add(new Label("test"));
 			
-
 			
 			Scene scene = new Scene(root,400,400);
+
 			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
 			t.start();
+			thread.start();
+
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
