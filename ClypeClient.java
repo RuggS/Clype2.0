@@ -9,6 +9,8 @@ import data.*;
 import javafx.application.Application;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -34,7 +36,8 @@ public class ClypeClient extends Application {
 	ObjectInputStream inFromServer;
 	ObjectOutputStream outToServer;
 	private TextField usrMsg = new TextField();
-	private static Boolean send = false;
+	private static boolean send = false;
+	private String msg = "";
 	
 	/**
 	 * Creates client using given parameters
@@ -83,7 +86,7 @@ public class ClypeClient extends Application {
 	/**
 	 * Will start session 
 	 */
-	public void start() {
+	public synchronized void start() {
 		try {
 			Socket skt = new Socket(hostName, port);
 			outToServer = new ObjectOutputStream(skt.getOutputStream());
@@ -94,19 +97,18 @@ public class ClypeClient extends Application {
 			t.start();
 			
 			while(!closeConnection) {
-//				System.out.println(usrMsg.getText());
-				readClientData();
-				if(!closeConnection && send) {
-					System.out.println(usrMsg.getText());
-					send = false;
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				if(!closeConnection && this.send) {
+					System.out.println("test msg: " + msg);
+					readClientData();
+					setSend(false);
 					sendData();
 				}
-//				if(!closeConnection) {
-//					receiveData();
-//				}
-//				if(!closeConnection) {
-//					printData();
-//				}
 			}
 			
 			skt.close();
@@ -130,8 +132,8 @@ public class ClypeClient extends Application {
 	/**
 	 * 
 	 */
-	public void readClientData() {
-		String input = usrMsg.getText();
+	public synchronized void readClientData() {
+		String input = msg;
 		if (input.equals("DONE")) {
 			closeConnection = true;
 		}else if (input.equals("SENDFILE")) {
@@ -167,8 +169,13 @@ public class ClypeClient extends Application {
 		}
 	}
 	
-	public void setSend(boolean s) {
+	public synchronized void setSend(boolean s) {
 		send = s;
+		notify();
+	}
+	
+	public synchronized void setmsg(String s) {
+		msg = s;
 	}
 	
 	/**
@@ -192,7 +199,6 @@ public class ClypeClient extends Application {
 	public void printData() {
 		if(dataToRecieveFromServer != null) {
 			System.out.println(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData());
-			System.out.println(usrMsg.getText());
 		}
 	}
 	
@@ -253,31 +259,46 @@ public class ClypeClient extends Application {
 			ClypeClient client = new ClypeClient("GuiTest");
 			
 			
-			Service<String> service = new Service<String>() {
-
-				@Override
-				protected Task<String> createTask() {
-					Task<String> task = new Task<String>() {
-						@Override
-						protected String call() {
-							
-							client.start();
-							return "done";
-						}
-					};
-					return task;
-					
-				}
-	        		
-	        };
+//			Service<String> service = new Service<String>() {
+//
+//				@Override
+//				protected Task<String> createTask() {
+//					Task<String> task = new Task<String>() {
+//						@Override
+//						protected String call() {
+//							
+//							client.start();
+//							return "done";
+//						}
+//					};
+//					return task;
+//					
+//				}
+//	        		
+//	        };
 	        
-			service.start();
+			
+	        Thread t = new Thread( new Runnable() {
+        		@Override
+        		public void run() {
+        			client.start();
+        		}
+        });	 
+	        
+
+	        
+//			service.start();
 			FlowPane root = new FlowPane();
 			
 			
 			
 			Button sendButton = new Button("Send Message");
-			sendButton.setOnAction(new SendHandler(client));
+			sendButton.setOnAction( new EventHandler<ActionEvent>() {			
+				public void handle( ActionEvent e ) {
+					client.setSend(true);
+					client.setmsg(usrMsg.getText());
+				}
+			});	
 			Button loadButton = new Button("Send Media");
 			
 			
@@ -293,6 +314,8 @@ public class ClypeClient extends Application {
 			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
+			
+			t.start();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
