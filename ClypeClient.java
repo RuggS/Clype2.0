@@ -4,7 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
-import application.SendHandler;
+import application.LogOnHandler;
 import data.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -265,10 +265,105 @@ public class ClypeClient extends Application {
 		return "This is a Clype Client with user name " + userName + ", host name, " + hostName + ", and port" + port;
 	}
 	
+	@SuppressWarnings("static-access")
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			ClypeClient client = new ClypeClient("GuiTest");
+			FlowPane logOnScreen = new FlowPane();
+			TextField name = new TextField();
+			Button logOn = new Button("Log On");
+			Scene log = new Scene(logOnScreen,400,400);
+			
+			
+			
+			name.setPromptText("User Name");
+			logOnScreen.getChildren().add(name);
+			
+			
+			
+			logOn.setOnAction( new EventHandler<ActionEvent>() {			
+				public void handle( ActionEvent e ) {
+					GridPane root = new GridPane();
+					Button sendButton = new Button("Send Message");
+					Button loadButton = new Button("Send Media");
+					root.getChildren().add(usrMsg);
+					root.setRowIndex(usrMsg, 0);
+					root.setColumnIndex(usrMsg, 0);
+					root.getChildren().add(sendButton);
+					root.setRowIndex(sendButton, 0);
+					root.setColumnIndex(sendButton, 1);
+					root.getChildren().add(loadButton);
+					root.setRowIndex(loadButton, 0);
+					root.setColumnIndex(loadButton, 2);
+					root.getChildren().add(messageHist);
+					root.setRowIndex(messageHist, 1);
+					root.setColumnIndex(messageHist, 0);
+					
+					Scene scene = new Scene(root,400,400);
+					String uName = name.getText();
+					ClypeClient client = new ClypeClient(uName);
+					
+					Thread t = new Thread( new Runnable() {
+		        		@Override
+		        		public void run() {
+		        			client.start();
+		        		}
+					});	 
+					
+					Thread thread = new Thread(new Runnable() {
+
+			            @Override
+			            public void run() {
+			                Runnable updater = new Runnable() {
+
+			                    @Override
+			                    public void run() {
+			                    	if(toGui != null) {
+			                    		messageHist.getChildren().add(new Label(toGui));
+			                    		toGui = null;
+			                    	}
+			                    }
+			                };
+
+			                while (true) {
+			                    try {
+			                        Thread.sleep(100);
+			                    } catch (InterruptedException ex) {
+			                    }
+
+			                    // UI update is run on the Application thread
+			                    Platform.runLater(updater);
+			                }
+			            }
+
+			        });
+					
+					sendButton.setOnAction( new EventHandler<ActionEvent>() {			
+						public void handle( ActionEvent e ) {
+							client.setSend(true);
+							client.setmsg(usrMsg.getText());
+						}
+					});	
+					
+					
+					primaryStage.setScene(scene);
+					primaryStage.show();
+					
+					t.start();
+					thread.start();
+					
+				}
+			});	
+
+			logOnScreen.getChildren().add(logOn);
+
+			
+			primaryStage.setScene(log);
+			primaryStage.show();
+			
+			
+			
+			
 			
 			
 //			Service<String> service = new Service<String>() {
@@ -289,83 +384,8 @@ public class ClypeClient extends Application {
 //	        		
 //	        };
 	        
-	        Thread t = new Thread( new Runnable() {
-        		@Override
-        		public void run() {
-        			client.start();
-        		}
-        });	 
 	        
-	        Thread thread = new Thread(new Runnable() {
-
-	            @Override
-	            public void run() {
-	                Runnable updater = new Runnable() {
-
-	                    @Override
-	                    public void run() {
-	                    	if(toGui != null) {
-	                    		messageHist.getChildren().add(new Label(toGui));
-	                    		toGui = null;
-	                    	}
-	                    }
-	                };
-
-	                while (true) {
-	                    try {
-	                        Thread.sleep(100);
-	                    } catch (InterruptedException ex) {
-	                    }
-
-	                    // UI update is run on the Application thread
-	                    Platform.runLater(updater);
-	                }
-	            }
-
-	        });
 	        
-
-			GridPane root = new GridPane();
-			
-			
-			
-			Button sendButton = new Button("Send Message");
-			sendButton.setOnAction( new EventHandler<ActionEvent>() {			
-				public void handle( ActionEvent e ) {
-					client.setSend(true);
-					client.setmsg(usrMsg.getText());
-				}
-			});	
-			Button loadButton = new Button("Send Media");
-			
-			
-			
-
-			
-			root.getChildren().add(usrMsg);
-			root.setRowIndex(usrMsg, 0);
-			root.setColumnIndex(usrMsg, 0);
-			root.getChildren().add(sendButton);
-			root.setRowIndex(sendButton, 0);
-			root.setColumnIndex(sendButton, 1);
-			root.getChildren().add(loadButton);
-			root.setRowIndex(loadButton, 0);
-			root.setColumnIndex(loadButton, 2);
-			root.getChildren().add(messageHist);
-			root.setRowIndex(messageHist, 1);
-			root.setColumnIndex(messageHist, 0);
-//			messageHist.getChildren().add(new Label("test"));
-			
-			
-			Scene scene = new Scene(root,400,400);
-
-			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
-			primaryStage.setScene(scene);
-			primaryStage.show();
-			
-			t.start();
-			thread.start();
-
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
