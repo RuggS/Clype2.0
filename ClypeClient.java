@@ -17,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -141,6 +142,7 @@ public class ClypeClient extends Application {
 		String input = msg;
 		if (input.equals("DONE")) {
 			closeConnection = true;
+			dataToSendToServer = new MessageClypeData(userName, "", 1);
 		}else if (input.equals("SENDFILE")) {
 			closeConnection = false;
 			
@@ -208,20 +210,9 @@ public class ClypeClient extends Application {
 		if(dataToRecieveFromServer != null) {
 			System.out.println(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData());
 			
-			
-//			usrMsg.setText("");
-//			Platform.runLater(() -> {
-////				messageHist.getChildren().add(new Label(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData()));
-//				usrMsg.setText("");
-//		    });
 		}
 	}
 	
-	public void printGui() {
-		if(dataToRecieveFromServer != null) {
-			messageHist.getChildren().add(new Label(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData()));
-		}
-	}
 	
 	/**
 	 * 
@@ -322,7 +313,7 @@ public class ClypeClient extends Application {
 
 	                while (true) {
 	                    try {
-	                        Thread.sleep(1000);
+	                        Thread.sleep(100);
 	                    } catch (InterruptedException ex) {
 	                    }
 
@@ -333,8 +324,8 @@ public class ClypeClient extends Application {
 
 	        });
 	        
-//			service.start();
-			FlowPane root = new FlowPane();
+
+			GridPane root = new GridPane();
 			
 			
 			
@@ -352,9 +343,17 @@ public class ClypeClient extends Application {
 
 			
 			root.getChildren().add(usrMsg);
+			root.setRowIndex(usrMsg, 0);
+			root.setColumnIndex(usrMsg, 0);
 			root.getChildren().add(sendButton);
+			root.setRowIndex(sendButton, 0);
+			root.setColumnIndex(sendButton, 1);
 			root.getChildren().add(loadButton);
+			root.setRowIndex(loadButton, 0);
+			root.setColumnIndex(loadButton, 2);
 			root.getChildren().add(messageHist);
+			root.setRowIndex(messageHist, 1);
+			root.setColumnIndex(messageHist, 0);
 //			messageHist.getChildren().add(new Label("test"));
 			
 			
