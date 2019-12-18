@@ -9,6 +9,8 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import javafx.scene.image.Image;
+
 public class PictureClypeData extends ClypeData {
 
 	private String imagePath = "";
@@ -34,13 +36,14 @@ public class PictureClypeData extends ClypeData {
 	@Override
 	public Object getData() {
 		InputStream in = new ByteArrayInputStream(this.barr);
-		try {
+		/*try {
 			img = ImageIO.read(in);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return imagePath;
+		}*/
+		Image image = new Image(in);
+		return image;
 	}
 
 	@Override

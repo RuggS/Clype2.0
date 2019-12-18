@@ -3,6 +3,7 @@ package data;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import javafx.scene.media.Media;
@@ -36,8 +37,19 @@ public class AudioClypeData extends ClypeData {
 
 	@Override
 	public Object getData() {
-		// TODO Auto-generated method stub
-		return file;
+		try {
+			File temp = File.createTempFile("audio",".mp3");
+			temp.deleteOnExit();
+			FileOutputStream fos = new FileOutputStream(temp);
+			fos.write(barr);
+			fos.close();
+			audioFile = new Media(temp.toURI().toString());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return audioFile;
 	}
 
 
