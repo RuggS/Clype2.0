@@ -370,6 +370,7 @@ public class ClypeClient extends Application {
 					root.getChildren().add(messageHist);
 					root.setRowIndex(messageHist, 1);
 					root.setColumnIndex(messageHist, 0);
+					root.setColumnSpan(messageHist, 2);
 					root.getChildren().add(userListLabel);
 					root.setRowIndex(userListLabel, 1);
 					root.setColumnIndex(userListLabel, 2);
@@ -407,13 +408,15 @@ public class ClypeClient extends Application {
 			                    @Override
 			                    public void run() {
 			                    	if(toGui != null) {
-			                    		
-			                    		messageHist.getChildren().add(new Label(toGui));
+			                    		Label l = new Label(toGui);
+			                    		l.setWrapText(true);
+			                    		messageHist.getChildren().add(l);
 			                    		toGui = null;
 			                    	}else if(dataToRecieveFromServer != null && dataToRecieveFromServer.getType() == ClypeData.SEND_PICTURE) {
 			                    		ImageView image = new ImageView( (Image) dataToRecieveFromServer.getData());
-			                    		image.setFitWidth(100);
+//			                    		image.setFitWidth(100);
 			                    		image.setPreserveRatio(true);
+			                    		image.fitWidthProperty().bind(messageHist.widthProperty());
 			                    		messageHist.getChildren().add(image);
 			                    		dataToRecieveFromServer = null;
 			                    	}else if(dataToRecieveFromServer != null && dataToRecieveFromServer.getType() == ClypeData.SEND_AUDIO) {
