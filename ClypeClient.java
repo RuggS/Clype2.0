@@ -21,6 +21,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -42,7 +43,7 @@ public class ClypeClient extends Application {
 	static final String key = "TIME";
 	boolean closeConnection = false;
 	ClypeData dataToSendToServer;
-	ClypeData dataToRecieveFromServer;
+	static ClypeData dataToRecieveFromServer;
 	Scanner inFromStd;
 	ObjectInputStream inFromServer;
 	ObjectOutputStream outToServer;
@@ -240,7 +241,7 @@ public class ClypeClient extends Application {
 				if(dataToRecieveFromServer.getType() == ClypeData.GET_USERS) {
 					userList = "Users: " + dataToRecieveFromServer.getData();
 				}else if(dataToRecieveFromServer.getType() == ClypeData.SEND_PICTURE) {
-					//code for image to gui here
+					dataToRecieveFromServer.getData();
 				}else if(dataToRecieveFromServer.getType() == ClypeData.SEND_AUDIO) {
 					//code for audio to gui here
 				}else {
@@ -404,10 +405,16 @@ public class ClypeClient extends Application {
 			                    		
 			                    		messageHist.getChildren().add(new Label(toGui));
 			                    		toGui = null;
-			                    	}else if(dataToGui.getType() == ClypeData.SEND_PICTURE) {
-//			                    		messageHist.getChildren().add(new Image());
-			                    	}else if(dataToGui.getType() == ClypeData.SEND_AUDIO) {
+			                    	}else if(dataToRecieveFromServer != null && dataToRecieveFromServer.getType() == ClypeData.SEND_PICTURE) {
+			                    		ImageView image = new ImageView( (Image) dataToRecieveFromServer.getData());
+			                    		image.setFitWidth(100);
+			                    		image.setPreserveRatio(true);
+			                    		messageHist.getChildren().add(image);
+			                    		dataToRecieveFromServer = null;
+//			                    		dataToRecieveFromServer = null;
+			                    	}else if(dataToRecieveFromServer != null && dataToRecieveFromServer.getType() == ClypeData.SEND_AUDIO) {
 //			                    		messageHist.getChildren().add(new AudioClip());
+			                    		dataToGui = null;
 			                    	}
 			                    }
 			                };
