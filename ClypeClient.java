@@ -201,19 +201,16 @@ public class ClypeClient extends Application {
 	}
 	
 	public void sendAudio(String path) {
-		String filePath = path.substring(5);
-		dataToSendToServer = new AudioClypeData(filePath, userName, ClypeData.SEND_AUDIO);
+		dataToSendToServer = new AudioClypeData(path, userName, ClypeData.SEND_AUDIO);
 
 	}
 
 	public void sendImage(String path) {
-		String filePath = path.substring(5);
-		dataToSendToServer = new PictureClypeData(filePath, userName, ClypeData.SEND_PICTURE);
+		dataToSendToServer = new PictureClypeData(path, userName, ClypeData.SEND_PICTURE);
 	}
 
 	public void sendFile(String path) {
-		String filePath = path.substring(5);
-		dataToSendToServer = new FileClypeData(userName, filePath, 2);
+		dataToSendToServer = new FileClypeData(userName, path, 2);
 		try {
 			((FileClypeData) dataToSendToServer).readFileContents();
 		} catch (IOException ioe) {
@@ -480,8 +477,10 @@ public class ClypeClient extends Application {
 					
 					loadButton.setOnAction(z -> {
 						File selectedFile = fileChooser.showOpenDialog(primaryStage);
-						client.mediaMsg = selectedFile.toURI().toString();
-						client.setMediaSend(true);
+						if(selectedFile != null) {
+							client.mediaMsg = selectedFile.toString();
+							client.setMediaSend(true);
+						}
 					});
 					
 					usrMsg.setOnKeyPressed( new EventHandler<KeyEvent>() {
