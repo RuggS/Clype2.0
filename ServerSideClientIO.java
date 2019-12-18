@@ -95,7 +95,7 @@ public class ServerSideClientIO implements Runnable {
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}catch (NullPointerException npe) {
-        					System.err.println(npe.getMessage());
+        					System.err.println(npe.getMessage());//always trips this at least once
         				}
         			}
         		}

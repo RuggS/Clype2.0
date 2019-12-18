@@ -13,6 +13,7 @@ import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -24,8 +25,12 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -411,10 +416,15 @@ public class ClypeClient extends Application {
 			                    		image.setPreserveRatio(true);
 			                    		messageHist.getChildren().add(image);
 			                    		dataToRecieveFromServer = null;
-//			                    		dataToRecieveFromServer = null;
 			                    	}else if(dataToRecieveFromServer != null && dataToRecieveFromServer.getType() == ClypeData.SEND_AUDIO) {
-//			                    		messageHist.getChildren().add(new AudioClip());
-			                    		dataToGui = null;
+			                    		MediaPlayer player = new MediaPlayer((Media) dataToRecieveFromServer.getData());
+			                    		MediaView audio = new MediaView(player);
+			                    		AudioPlayer audioPlayer = new AudioPlayer(player);
+			                			
+			                    		messageHist.getChildren().add(audio);
+			                    		messageHist.getChildren().add(audioPlayer);
+			                    		System.out.println("test");
+			                    		dataToRecieveFromServer = null;
 			                    	}
 			                    }
 			                };
