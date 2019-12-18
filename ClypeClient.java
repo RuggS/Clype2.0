@@ -16,6 +16,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -44,6 +46,7 @@ public class ClypeClient extends Application {
 	private static boolean send = false;
 	private String msg = "";
 	private static String toGui = null;
+	private static String userList = "";
 	
 	/**
 	 * Creates client using given parameters
@@ -101,6 +104,9 @@ public class ClypeClient extends Application {
 			ClientSideServerListener listener = new ClientSideServerListener(this);
 			Thread t = new Thread(listener);
 			t.start();
+			
+			dataToSendToServer = new MessageClypeData(userName, "", ClypeData.GET_USERS);
+			sendData();
 			
 			while(!closeConnection) {
 				try {
@@ -192,7 +198,11 @@ public class ClypeClient extends Application {
 		try {
 			dataToRecieveFromServer = (ClypeData) inFromServer.readObject();
 			if(dataToRecieveFromServer != null) {
-				toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
+				if(dataToRecieveFromServer.getType() == ClypeData.GET_USERS) {
+					userList = "Users: " + dataToRecieveFromServer.getData();
+				}else {
+					toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
+				}
 			}
 		} catch (ClassNotFoundException cnfe) {
 			System.err.println("Class not found exception: " + cnfe.getMessage());
@@ -291,6 +301,7 @@ public class ClypeClient extends Application {
 					GridPane root = new GridPane();
 					Button sendButton = new Button("Send Message");
 					Button loadButton = new Button("Send Media");
+					Label userListLabel = new Label();
 					root.getChildren().add(usrMsg);
 					root.setRowIndex(usrMsg, 0);
 					root.setColumnIndex(usrMsg, 0);
@@ -303,6 +314,9 @@ public class ClypeClient extends Application {
 					root.getChildren().add(messageHist);
 					root.setRowIndex(messageHist, 1);
 					root.setColumnIndex(messageHist, 0);
+					root.getChildren().add(userListLabel);
+					root.setRowIndex(userListLabel, 1);
+					root.setColumnIndex(userListLabel, 2);
 					
 					Scene scene = new Scene(root,400,400);
 					String uName = name.getText();
@@ -321,14 +335,14 @@ public class ClypeClient extends Application {
 					}
 					
 					
-					Thread t = new Thread( new Runnable() {
+					Thread clientRunner = new Thread( new Runnable() {
 		        		@Override
 		        		public void run() {
 		        			client.start();
 		        		}
 					});	 
 					
-					Thread thread = new Thread(new Runnable() {
+					Thread guiPrinter = new Thread(new Runnable() {
 
 			            @Override
 			            public void run() {
@@ -356,19 +370,55 @@ public class ClypeClient extends Application {
 
 			        });
 					
+					Thread userPrinter = new Thread(new Runnable() {
+
+			            @Override
+			            public void run() {
+			                Runnable updater = new Runnable() {
+
+			                    @Override
+			                    public void run() {
+			                    	userListLabel.setText(userList);
+			                    }
+			                };
+
+			                while (true) {
+			                    try {
+			                        Thread.sleep(200);
+			                    } catch (InterruptedException ex) {
+			                    }
+
+			                    // UI update is run on the Application thread
+			                    Platform.runLater(updater);
+			                }
+			            }
+
+			        });
+					
 					sendButton.setOnAction( new EventHandler<ActionEvent>() {			
 						public void handle( ActionEvent e ) {
 							client.setSend(true);
 							client.setmsg(usrMsg.getText());
+							usrMsg.clear();
 						}
 					});	
+					usrMsg.setOnKeyPressed( new EventHandler<KeyEvent>() {
+						public void handle( KeyEvent ke ) {
+							if ( ke.getCode() == KeyCode.ENTER ) {
+								client.setSend(true);
+								client.setmsg(usrMsg.getText());
+								usrMsg.clear();
+							}
+						}
+					});
 					
 					
 					primaryStage.setScene(scene);
 					primaryStage.show();
 					
-					t.start();
-					thread.start();
+					clientRunner.start();
+					guiPrinter.start();
+					userPrinter.start();
 					
 				}
 			});	

@@ -124,7 +124,7 @@ public class ClypeServer {
 	 * @return a string of all the connected users
 	 */
 	public String getAllUsers() {
-		String r = "";
+		String r = "\n";
 		for(ServerSideClientIO s : this.serverSideClientIOList)
 			r += s.getUsername() + "\n";
 		

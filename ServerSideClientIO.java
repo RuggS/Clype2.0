@@ -85,6 +85,24 @@ public class ServerSideClientIO implements Runnable {
 			outToClient = new ObjectOutputStream(clientSocket.getOutputStream());
 			inFromClient = new ObjectInputStream(clientSocket.getInputStream());
 			
+			Thread userPrinter = new Thread( new Runnable() {
+        		@Override
+        		public void run() {
+        			while(!closeConnection) {
+        				try {
+        					server.broadcast(new MessageClypeData(dataToReceiveFromClient.getUserName(), server.getAllUsers(), ClypeData.GET_USERS));
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}catch (NullPointerException npe) {
+        					System.err.println(npe.getMessage());
+        				}
+        			}
+        		}
+			});
+			
+			userPrinter.start();
+			
 			while(!closeConnection) {
 				receiveData();
 				dataToSendToClient = dataToReceiveFromClient;
