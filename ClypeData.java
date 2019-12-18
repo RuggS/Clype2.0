@@ -15,6 +15,8 @@ public abstract class ClypeData implements Serializable {
 	public static final int LOG_OUT = 1;
 	public static final int SEND_FILE = 2;
 	public static final int SEND_MESSAGE = 3;
+	public static final int SEND_PICTURE= 4;
+	public static final int SEND_AUDIO = 5;
 	/**
 	 * Constructor that initializes userName and type to an input. Initializes date to the time of instantiation
 	 * @param userName 

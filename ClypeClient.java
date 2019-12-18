@@ -53,6 +53,7 @@ public class ClypeClient extends Application {
 	private String mediaMsg = "";
 	private static String toGui = null;
 	private static String userList = "";
+	static ClypeData dataToGui;
 	
 	/**
 	 * Creates client using given parameters
@@ -194,13 +195,13 @@ public class ClypeClient extends Application {
 	
 	public void sendAudio(String path) {
 		String filePath = path.substring(5);
-		dataToSendToServer = new AudioClypeData(filePath, userName, 2);
+		dataToSendToServer = new AudioClypeData(filePath, userName, ClypeData.SEND_AUDIO);
 
 	}
 
 	public void sendImage(String path) {
 		String filePath = path.substring(5);
-		dataToSendToServer = new PictureClypeData(filePath, userName, 2);
+		dataToSendToServer = new PictureClypeData(filePath, userName, ClypeData.SEND_PICTURE);
 	}
 
 	public void sendFile(String path) {
@@ -395,6 +396,7 @@ public class ClypeClient extends Application {
 			                    @Override
 			                    public void run() {
 			                    	if(toGui != null) {
+			                    		
 			                    		messageHist.getChildren().add(new Label(toGui));
 			                    		toGui = null;
 			                    	}
