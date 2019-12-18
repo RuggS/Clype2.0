@@ -271,6 +271,8 @@ public class ClypeClient extends Application {
 		try {
 			FlowPane logOnScreen = new FlowPane();
 			TextField name = new TextField();
+			TextField hname = new TextField();
+			TextField port = new TextField();
 			Button logOn = new Button("Log On");
 			Scene log = new Scene(logOnScreen,400,400);
 			
@@ -278,7 +280,10 @@ public class ClypeClient extends Application {
 			
 			name.setPromptText("User Name");
 			logOnScreen.getChildren().add(name);
-			
+			hname.setPromptText("Host Name");
+			logOnScreen.getChildren().add(hname);
+			port.setPromptText("Port Number");
+			logOnScreen.getChildren().add(port);
 			
 			
 			logOn.setOnAction( new EventHandler<ActionEvent>() {			
@@ -301,7 +306,20 @@ public class ClypeClient extends Application {
 					
 					Scene scene = new Scene(root,400,400);
 					String uName = name.getText();
-					ClypeClient client = new ClypeClient(uName);
+					String hName = hname.getText();
+					String portstr = port.getText();
+					ClypeClient client;
+					if(uName.equals("")) {
+						client = new ClypeClient();
+					}else if(hName.equals("")) {
+						client = new ClypeClient(uName);
+					}else if(portstr.equals("")) {
+						client = new ClypeClient(uName, hName);
+					}else {
+						int portnum = Integer.parseInt(portstr);
+						client = new ClypeClient(uName, hName, portnum);
+					}
+					
 					
 					Thread t = new Thread( new Runnable() {
 		        		@Override
