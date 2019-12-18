@@ -1,10 +1,13 @@
 package main;
 
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
-import application.LogOnHandler;
+import javax.imageio.ImageIO;
+
+import application.SendHandler;
 import data.*;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -16,11 +19,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.image.Image;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 /**
@@ -44,9 +46,10 @@ public class ClypeClient extends Application {
 	private TextField usrMsg = new TextField();
 	private VBox messageHist = new VBox();
 	private static boolean send = false;
+	private static boolean sendMedia = false;
 	private String msg = "";
+	private String mediaMsg = "";
 	private static String toGui = null;
-	private static String userList = "";
 	
 	/**
 	 * Creates client using given parameters
@@ -105,9 +108,6 @@ public class ClypeClient extends Application {
 			Thread t = new Thread(listener);
 			t.start();
 			
-			dataToSendToServer = new MessageClypeData(userName, "", ClypeData.GET_USERS);
-			sendData();
-			
 			while(!closeConnection) {
 				try {
 					wait();
@@ -116,9 +116,12 @@ public class ClypeClient extends Application {
 					e.printStackTrace();
 				}
 				if(!closeConnection && this.send) {
-					System.out.println("test msg: " + msg);
 					readClientData();
-					setSend(false);
+					this.send = false;
+					sendData();
+				} else if(!closeConnection && this.sendMedia) {
+					readClientData();
+					this.sendMedia = false;
 					sendData();
 				}
 			}
@@ -148,16 +151,15 @@ public class ClypeClient extends Application {
 		String input = msg;
 		if (input.equals("DONE")) {
 			closeConnection = true;
-			dataToSendToServer = new MessageClypeData(userName, "", 1);
-		}else if (input.equals("SENDFILE")) {
+		}else if (sendMedia) {
+			input = mediaMsg;
 			closeConnection = false;
-			
-			dataToSendToServer = new FileClypeData(userName, input, 2);
-			try {
-				((FileClypeData) dataToSendToServer).readFileContents();
-			} catch (IOException ioe) {
-				System.err.println("IO exception");
-				dataToSendToServer = null;
+			if(input.endsWith("txt") || input.endsWith("TXT")) {
+				this.sendFile(input);
+			} else if(input.endsWith("mp3") || input.endsWith("MP3")) {
+				this.sendAudio(input);
+			} else if(input.endsWith("jpg") || input.endsWith("png") || input.endsWith("JPG") || input.endsWith("PNG")) {
+				this.sendImage(input);
 			}
 		}else if (input.equals("LISTUSERS")) {
 //			closeConnection = true;
@@ -167,6 +169,28 @@ public class ClypeClient extends Application {
 		}else {
 			closeConnection = false;
 			dataToSendToServer = new MessageClypeData(userName, input, 3);
+		}
+	}
+	
+	public void sendAudio(String path) {
+		String filePath = path.substring(5);
+		dataToSendToServer = new AudioClypeData(filePath, userName, 2);
+		
+	}
+	
+	public void sendImage(String path) {
+		String filePath = path.substring(5);
+		dataToSendToServer = new PictureClypeData(filePath, userName, 2);
+	}
+	
+	public void sendFile(String path) {
+		String filePath = path.substring(5);
+		dataToSendToServer = new FileClypeData(userName, filePath, 2);
+		try {
+			((FileClypeData) dataToSendToServer).readFileContents();
+		} catch (IOException ioe) {
+			System.err.println("IO exception");
+			dataToSendToServer = null;
 		}
 	}
 	
@@ -187,6 +211,11 @@ public class ClypeClient extends Application {
 		notify();
 	}
 	
+	public synchronized void setMediaSend(boolean s) {
+		sendMedia = s;
+		notify();
+	}
+	
 	public synchronized void setmsg(String s) {
 		msg = s;
 	}
@@ -198,11 +227,7 @@ public class ClypeClient extends Application {
 		try {
 			dataToRecieveFromServer = (ClypeData) inFromServer.readObject();
 			if(dataToRecieveFromServer != null) {
-				if(dataToRecieveFromServer.getType() == ClypeData.GET_USERS) {
-					userList = "Users: " + dataToRecieveFromServer.getData();
-				}else {
-					toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
-				}
+				toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
 			}
 		} catch (ClassNotFoundException cnfe) {
 			System.err.println("Class not found exception: " + cnfe.getMessage());
@@ -223,6 +248,11 @@ public class ClypeClient extends Application {
 		}
 	}
 	
+	public void printGui() {
+		if(dataToRecieveFromServer != null) {
+			messageHist.getChildren().add(new Label(dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData()));
+		}
+	}
 	
 	/**
 	 * 
@@ -275,185 +305,92 @@ public class ClypeClient extends Application {
 		return "This is a Clype Client with user name " + userName + ", host name, " + hostName + ", and port" + port;
 	}
 	
-	@SuppressWarnings("static-access")
 	@Override
 	public void start(Stage primaryStage) {
 		try {
-			FlowPane logOnScreen = new FlowPane();
-			TextField name = new TextField();
-			TextField hname = new TextField();
-			TextField port = new TextField();
-			Button logOn = new Button("Log On");
-			Scene log = new Scene(logOnScreen,400,400);
+			ClypeClient client = new ClypeClient("GuiTest");
 			
+	        
+	        Thread t = new Thread( new Runnable() {
+        		@Override
+        		public void run() {
+        			client.start();
+        		}
+        });	 
+	        
+	        Thread thread = new Thread(new Runnable() {
+
+	            @Override
+	            public void run() {
+	                Runnable updater = new Runnable() {
+
+	                    @Override
+	                    public void run() {
+	                    	if(toGui != null) {
+	                    		messageHist.getChildren().add(new Label(toGui));
+	                    		toGui = null;
+	                    	}
+	                    }
+	                };
+
+	                while (true) {
+	                    try {
+	                        Thread.sleep(1000);
+	                    } catch (InterruptedException ex) {
+	                    }
+
+	                    // UI update is run on the Application thread
+	                    Platform.runLater(updater);
+	                }
+	            }
+
+	        });
+	        
+//			service.start();
+			FlowPane root = new FlowPane();
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.getExtensionFilters().addAll(
+				     new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+				     new FileChooser.ExtensionFilter("Images", "*.jpg","*.png"),
+				     new FileChooser.ExtensionFilter("Audio Files", "*.mp3")
+				);
 			
-			
-			name.setPromptText("User Name");
-			logOnScreen.getChildren().add(name);
-			hname.setPromptText("Host Name");
-			logOnScreen.getChildren().add(hname);
-			port.setPromptText("Port Number");
-			logOnScreen.getChildren().add(port);
-			
-			
-			logOn.setOnAction( new EventHandler<ActionEvent>() {			
+			Button loadButton = new Button("Send Media");
+			Button sendButton = new Button("Send Message");
+			sendButton.setOnAction( new EventHandler<ActionEvent>() {			
 				public void handle( ActionEvent e ) {
-					GridPane root = new GridPane();
-					Button sendButton = new Button("Send Message");
-					Button loadButton = new Button("Send Media");
-					Label userListLabel = new Label();
-					root.getChildren().add(usrMsg);
-					root.setRowIndex(usrMsg, 0);
-					root.setColumnIndex(usrMsg, 0);
-					root.getChildren().add(sendButton);
-					root.setRowIndex(sendButton, 0);
-					root.setColumnIndex(sendButton, 1);
-					root.getChildren().add(loadButton);
-					root.setRowIndex(loadButton, 0);
-					root.setColumnIndex(loadButton, 2);
-					root.getChildren().add(messageHist);
-					root.setRowIndex(messageHist, 1);
-					root.setColumnIndex(messageHist, 0);
-					root.getChildren().add(userListLabel);
-					root.setRowIndex(userListLabel, 1);
-					root.setColumnIndex(userListLabel, 2);
-					
-					Scene scene = new Scene(root,400,400);
-					String uName = name.getText();
-					String hName = hname.getText();
-					String portstr = port.getText();
-					ClypeClient client;
-					if(uName.equals("")) {
-						client = new ClypeClient();
-					}else if(hName.equals("")) {
-						client = new ClypeClient(uName);
-					}else if(portstr.equals("")) {
-						client = new ClypeClient(uName, hName);
-					}else {
-						int portnum = Integer.parseInt(portstr);
-						client = new ClypeClient(uName, hName, portnum);
-					}
-					
-					
-					Thread clientRunner = new Thread( new Runnable() {
-		        		@Override
-		        		public void run() {
-		        			client.start();
-		        		}
-					});	 
-					
-					Thread guiPrinter = new Thread(new Runnable() {
-
-			            @Override
-			            public void run() {
-			                Runnable updater = new Runnable() {
-
-			                    @Override
-			                    public void run() {
-			                    	if(toGui != null) {
-			                    		messageHist.getChildren().add(new Label(toGui));
-			                    		toGui = null;
-			                    	}
-			                    }
-			                };
-
-			                while (true) {
-			                    try {
-			                        Thread.sleep(100);
-			                    } catch (InterruptedException ex) {
-			                    }
-
-			                    // UI update is run on the Application thread
-			                    Platform.runLater(updater);
-			                }
-			            }
-
-			        });
-					
-					Thread userPrinter = new Thread(new Runnable() {
-
-			            @Override
-			            public void run() {
-			                Runnable updater = new Runnable() {
-
-			                    @Override
-			                    public void run() {
-			                    	userListLabel.setText(userList);
-			                    }
-			                };
-
-			                while (true) {
-			                    try {
-			                        Thread.sleep(200);
-			                    } catch (InterruptedException ex) {
-			                    }
-
-			                    // UI update is run on the Application thread
-			                    Platform.runLater(updater);
-			                }
-			            }
-
-			        });
-					
-					sendButton.setOnAction( new EventHandler<ActionEvent>() {			
-						public void handle( ActionEvent e ) {
-							client.setSend(true);
-							client.setmsg(usrMsg.getText());
-							usrMsg.clear();
-						}
-					});	
-					usrMsg.setOnKeyPressed( new EventHandler<KeyEvent>() {
-						public void handle( KeyEvent ke ) {
-							if ( ke.getCode() == KeyCode.ENTER ) {
-								client.setSend(true);
-								client.setmsg(usrMsg.getText());
-								usrMsg.clear();
-							}
-						}
-					});
-					
-					
-					primaryStage.setScene(scene);
-					primaryStage.show();
-					
-					clientRunner.start();
-					guiPrinter.start();
-					userPrinter.start();
-					
+					client.msg = usrMsg.getText();
+					client.setSend(true);
 				}
 			});	
-
-			logOnScreen.getChildren().add(logOn);
-
 			
-			primaryStage.setScene(log);
+			loadButton.setOnAction(e -> {
+				File selectedFile = fileChooser.showOpenDialog(primaryStage);
+				client.mediaMsg = selectedFile.toURI().toString();
+				client.setMediaSend(true);
+			});
+			
+		
+			
+			//root.getChildren().add()
+
+
+			root.getChildren().add(usrMsg);
+			root.getChildren().add(sendButton);
+			root.getChildren().add(loadButton);
+			root.getChildren().add(messageHist);
+//			messageHist.getChildren().add(new Label("test"));
+			
+			
+			Scene scene = new Scene(root,400,400);
+
+			//scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			
-			
-			
-			
-			
-//			Service<String> service = new Service<String>() {
-//
-//				@Override
-//				protected Task<String> createTask() {
-//					Task<String> task = new Task<String>() {
-//						@Override
-//						protected String call() {
-//							
-//							client.start();
-//							return "done";
-//						}
-//					};
-//					return task;
-//					
-//				}
-//	        		
-//	        };
-	        
-	        
-	        
+			t.start();
+			thread.start();
+
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -464,4 +401,3 @@ public class ClypeClient extends Application {
 		launch(args);
 	}
 }
-	
