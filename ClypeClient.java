@@ -24,6 +24,7 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.AudioClip;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -238,6 +239,10 @@ public class ClypeClient extends Application {
 			if(dataToRecieveFromServer != null) {
 				if(dataToRecieveFromServer.getType() == ClypeData.GET_USERS) {
 					userList = "Users: " + dataToRecieveFromServer.getData();
+				}else if(dataToRecieveFromServer.getType() == ClypeData.SEND_PICTURE) {
+					//code for image to gui here
+				}else if(dataToRecieveFromServer.getType() == ClypeData.SEND_AUDIO) {
+					//code for audio to gui here
 				}else {
 					toGui = dataToRecieveFromServer.getUserName() + ": " + dataToRecieveFromServer.getData();
 				}
@@ -399,6 +404,10 @@ public class ClypeClient extends Application {
 			                    		
 			                    		messageHist.getChildren().add(new Label(toGui));
 			                    		toGui = null;
+			                    	}else if(dataToGui.getType() == ClypeData.SEND_PICTURE) {
+//			                    		messageHist.getChildren().add(new Image());
+			                    	}else if(dataToGui.getType() == ClypeData.SEND_AUDIO) {
+//			                    		messageHist.getChildren().add(new AudioClip());
 			                    	}
 			                    }
 			                };
